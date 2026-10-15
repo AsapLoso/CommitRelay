@@ -6,6 +6,8 @@ CommitRelay converts files from Git repositories into messages **without AI-spec
 
 The file is the interface; Git is the audit trail. This makes CommitRelay particularly useful in agentic workflows, without coupling it to one LLM or vendor.
 
+That mysteriously quiet co-author who slips a *"tiny cleanup"* commit under the rug? CommitRelay can notice that too. It won't judge the commit — just what changed.
+
 > **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Telegram delivery and local SQLite checkpoints have been implemented. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
 
 ## Why use it?
@@ -213,6 +215,8 @@ No automatic Telegram workflow has been activated in this repository.
 - Security: review changes to any workflow that has secrets. Public source code doesn't imply your tokens, private files, or personal configurations should become public.
 - Development tests: `python -m unittest discover -s tests -v`.
 
-Please use [GitHub feature requests](https://github.com/AsapLoso/CommitRelay/issues/new?template=feature_request.md) rather than empty pull requests. Include your use case, proposed CLI/config syntax and privacy considerations.
+**Want a new feature?** Open [Issues → New issue → Feature request](https://github.com/AsapLoso/CommitRelay/issues/new?template=feature_request.md). That template is for proposing ideas and describing use cases; it **does not** appear when creating a pull request. If you've already implemented a change, feel free to open a normal PR with the relevant code and tests. No empty PR is needed just to request a feature.
+
+**Similar tools exist.** See [Related tools and positioning](docs/RELATED_TOOLS.md) for an initial, non-exhaustive comparison. CommitRelay's goal is not to claim Git notifications were invented here; it's to make parsed file content a practical, agent-independent delivery boundary.
 
 **Release plan:** first verify the end-to-end Telegram slice and checkpoint behavior; then add persisted hosted state and external trigger automation. No release is claimed until those are working.

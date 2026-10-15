@@ -186,7 +186,8 @@ def install_hook(repo, job):
     job = Path(job).resolve()
     if not job.is_file():
         raise ConfigError("Job YAML not found: " + str(job))
-    command = shlex.quote(sys.executable) + " -m commitrelay run --job " + shlex.quote(str(job))
+    project = job.parent.parent
+    command = shlex.quote(sys.executable) + " -m commitrelay --configs " + shlex.quote(str(project / "configs")) + " --state " + shlex.quote(str(project / ".commitrelay-state" / "deliveries.db")) + " run --job " + shlex.quote(str(job))
     target.write_text("#!/bin/sh\n" + command + "\n", encoding="utf-8")
     target.chmod(0o755)
     print("Installed local Git post-commit hook:", target)

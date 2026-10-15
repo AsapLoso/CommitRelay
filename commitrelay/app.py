@@ -255,7 +255,7 @@ def telegram_send(title, path, body, test=False):
         raise ConfigError("Telegram delivery through Apprise failed (details redacted)") from None
 
 
-def run_sync(sync: Sync, checkpoints: Checkpoints, dry_run=False):
+def run_sync(sync: Sync, checkpoints: Checkpoints, dry_run=False, baseline=False):
     if not sync.enabled:
         print("SKIP " + sync.name + ": disabled")
         return 0, 0
@@ -276,7 +276,10 @@ def run_sync(sync: Sync, checkpoints: Checkpoints, dry_run=False):
             if checkpoints.same(key, digest):
                 skipped += 1
                 continue
-            if dry_run:
+            if baseline:
+                checkpoints.mark(key, digest)
+                print(f"BASELINED {sync.name}: {path} -> {destination} (nothing sent)")
+            elif dry_run:
                 print(f"WOULD SEND {sync.name}: {path} -> {destination} ({len(body)} characters)")
             elif destination == "telegram":
                 telegram_send(sync.name, path, body)

@@ -221,6 +221,7 @@ def main(argv=None):
     select.add_argument("--config", help="Sync name or config YAML path")
     select.add_argument("--job", type=Path, help="Job YAML")
     r.add_argument("--dry-run", action="store_true", help="Preview: no network sends or checkpoint writes")
+    r.add_argument("--baseline", action="store_true", help="Mark existing selected content as seen without sending (initial installation only)")
     r.add_argument("--event-file", type=Path, help="GitHub repository_dispatch event JSON; selects only explicitly configured source repositories")
     h = sp.add_parser("hook", help="Manage local Git hooks")
     h.add_argument("action", choices=["install"])
@@ -241,6 +242,8 @@ def main(argv=None):
         elif args.command == "hook":
             install_hook(args.repo, args.job)
         elif args.command == "run":
+            if args.baseline and args.dry_run:
+                raise ConfigError("--baseline and --dry-run cannot be combined")
             if args.job:
                 job = read_job(args.job)
                 if not job["enabled"]:
@@ -260,8 +263,8 @@ def main(argv=None):
             checkpoints = checkpoints_from_environment(args.state)
             try:
                 for sync in syncs:
-                    sent, skipped = run_sync(sync, checkpoints, args.dry_run)
-                    print(f"{sync.name}: {sent} deliveries planned/sent, {skipped} skipped")
+                    sent, skipped = run_sync(sync, checkpoints, dry_run=args.dry_run, baseline=args.baseline)
+                    print(f"{sync.name}: {sent} new/marked entries, {skipped} skipped")
             finally:
                 checkpoints.close()
         return 0

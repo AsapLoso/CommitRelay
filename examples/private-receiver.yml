@@ -5,6 +5,12 @@ on:
   repository_dispatch:
     types: [commitrelay_push]
   workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Preview or baseline existing source files (never sends messages)'
+        type: choice
+        default: preview
+        options: [preview, baseline]
 
 permissions:
   contents: write # Only on your PRIVATE installation repo; for hosted checkpoints.
@@ -32,6 +38,7 @@ jobs:
           COMMITRELAY_STATE_BRANCH: main
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MANUAL_OPERATION: ${{ inputs.operation }}
         shell: bash
         run: |
           # Manual invocation is deliberately read-only. External events may deliver
@@ -39,5 +46,9 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == 'repository_dispatch' ]]; then
             commitrelay run --all --event-file "$GITHUB_EVENT_PATH"
           else
-            commitrelay run --all --dry-run
+            if [[ "$MANUAL_OPERATION" == 'baseline' ]]; then
+              commitrelay run --all --baseline
+            else
+              commitrelay run --all --dry-run
+            fi
           fi

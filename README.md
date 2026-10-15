@@ -12,7 +12,7 @@ That mysteriously quiet co-author who slips a *"tiny cleanup"* commit under the 
 
 ## Example 1: your weekly article, straight to your phone
 
-*An illustrative end-to-end project. The central automatic GitHub push trigger is **not yet implemented**.*
+*An illustrative project. The **opt-in cross-repository push bridge** now has example workflows, but it is not installed or live-tested.*
 
 You have an AI agent that researches a different topic each Saturday. It writes a long Markdown article in your private repository, perhaps with personal notes above a divider:
 
@@ -20,7 +20,7 @@ You have an AI agent that researches a different topic each Saturday. It writes 
 
 Your agent never gets a Telegram token, doesn't need special AI hooks, and doesn't have to know that Telegram exists. It just writes a file and commits it. The same pattern works for research reports, meeting notes, generated documents, or experiment results.
 
-**Today:** the CLI can read that repository on demand, transform the content, compare its hash with a local checkpoint, and send through Telegram. **Missing:** unattended external-push triggering and durable hosted checkpoints.
+**Today:** on-demand reading, filtering and hash comparison work in the Python code; opt-in GitHub event-bridge and remote-state examples have been committed. **Not done:** installing them, verifying live end-to-end Telegram delivery and offering a central GitHub App that needs no source-repo workflow.
 
 ## Example 2: the mysterious co-author
 
@@ -32,7 +32,7 @@ The intended setup would watch particular branches, directories and filenames an
 
 For the event-driven design and existing alternatives, see [Push hooks and external triggers](docs/EVENT_TRIGGERS.md).
 
-> **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Apprise-backed Telegram delivery and local SQLite checkpoints are present. Offline adapter tests were added, but live Telegram delivery and hosted end-to-end behavior have not been verified. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
+> **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Apprise-backed Telegram delivery and local SQLite checkpoints are present. Offline adapter tests were added, but live Telegram delivery and hosted end-to-end behavior have not been verified. **Automatic delivery is not enabled** in this public repository; opt-in receiver/source workflow templates and a GitHub-backed checkpoint adapter exist, but end-to-end operation is not yet verified.
 
 ## Before installing: consider these alternatives
 
@@ -47,7 +47,7 @@ CommitRelay is not necessarily the best choice. If you need something that alrea
 | Build a complete automation visually, with GitHub and Telegram connections | [n8n](https://n8n.io/) | Existing workflow editor and integrations; more suitable if you want a visual automation platform. |
 | Trigger only when particular files change in GitHub Actions | [dorny/paths-filter](https://github.com/dorny/paths-filter) or [tj-actions/changed-files](https://github.com/tj-actions/changed-files) | They solve path filtering and change detection without another watcher. |
 
-**Where CommitRelay aims to fit:** file-content delivery with trusted transforms, content-level deduplication, a Git-friendly CLI, and configurable sources. This is still early software; its hosted cross-repository workflow is **not ready yet**. We would rather link you to a more suitable tool than have you depend on an unfinished feature.
+**Where CommitRelay aims to fit:** file-content delivery with trusted transforms, content-level deduplication, a Git-friendly CLI, and configurable sources. This is still early software; its cross-repository workflow requires **manual opt-in setup and end-to-end verification**. We would rather link you to a more suitable tool than have you depend on an unfinished feature.
 
 For a more detailed comparison and other tools, see [Related tools and honest alternatives](docs/RELATED_TOOLS.md). The proposed event-driven approach is described in [Push hooks and external triggers](docs/EVENT_TRIGGERS.md).
 
@@ -95,6 +95,17 @@ commitrelay --help
 ~~~
 
 It also works without installing a global command from a checkout using `python -m commitrelay --help`. If you install from GitHub without cloning, create your own working directory containing `configs/` and `jobs/` and run it from there.
+
+## Connect another GitHub repository
+
+**No cloning, rebasing or submodules are needed** for cross-repository reading. Your sync YAML identifies the source as `OWNER/REPO`, and CommitRelay reads it through GitHub's API. For a fully unattended workflow, the optional [two-repository setup guide](docs/CROSS_REPO_SETUP.md) explains the receiver, source push-event bridge, scoped secrets, private checkpoint state, and first-installation **preview → baseline → enable** sequence.
+
+```bash
+commitrelay run --all --dry-run
+commitrelay run --all --baseline  # Mark existing files seen; send nothing
+```
+
+A hosted source push bridge runs on pushes, not every five minutes. It still consumes **one small Actions run in each repository per push** and requires a token with write permission to the private installation repository. Do not copy the example workflows into private source repositories until you're ready to verify them.
 
 ## Telegram credentials
 
@@ -201,6 +212,7 @@ commitrelay doctor -n             # Never send
 commitrelay doctor -y --telegram  # Send a Telegram test
 commitrelay doctor -y --all       # Test all implemented destinations
 commitrelay run --all --dry-run
+commitrelay run --all --baseline  # Initialize existing hashes WITHOUT sending
 commitrelay run --config NAME --dry-run
 commitrelay run --all
 ~~~
@@ -239,7 +251,7 @@ This installs a *local* `post-commit` hook calling Python. It refuses to overwri
 
 You don't need a local Git hook for GitHub Actions: a remote repository's **push** event is generated on GitHub's servers. A workflow in repository A does **not** automatically receive repository B's pushes. For cross-repository automation use a webhook / `repository_dispatch` mechanism or poll GitHub from a runner.
 
-The remote **GitHub snapshot reader is already implemented**. It can inspect the current matched files when `commitrelay run` executes. Automatic cross-repository event wiring and a durable hosted checkpoint store are **not yet implemented**.
+The remote **GitHub snapshot reader is already implemented**. It can inspect the current matched files when `commitrelay run` executes. Opt-in cross-repository dispatch **examples** and a GitHub-hosted persistent checkpoint adapter have now been added. See [Cross-repository setup](docs/CROSS_REPO_SETUP.md); they are **not deployed or end-to-end verified**.
 
 A planned scheduled job is shown in [jobs/example-hosted.yaml](jobs/example-hosted.yaml):
 
@@ -256,7 +268,7 @@ trigger:
 
 ### Delivery history and reliability
 
-Local checkpoints persist on your machine. GitHub-hosted runners are ephemeral: do **not** turn on repeated hosted delivery until a durable state backend has been configured, or the same files may resend every run. Delivery and checkpoint saving aren't atomic across two systems; a crash between them can cause a duplicate on retry. Current polling tracks *latest parsed file state*, not every intermediate commit that happened between polls.
+Local checkpoints persist on your machine. GitHub-hosted runners are ephemeral; the new opt-in GitHub Contents API state backend saves delivery hashes to your **private installation repository**, configured with `COMMITRELAY_STATE_REPOSITORY`. **Do not enable the hosted sender before testing it and baselining existing files.** Delivery and checkpoint saving aren't atomic across two systems; a crash between them can cause a duplicate on retry. Current polling tracks *latest parsed file state*, not every intermediate commit that happened between polls.
 
 No automatic Telegram workflow has been activated in this repository.
 

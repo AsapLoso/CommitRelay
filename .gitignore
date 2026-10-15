@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# CommitRelay local delivery checkpoints and private installation configs
+.commitrelay-state/
+configs/*.yaml
+jobs/*.local.yaml

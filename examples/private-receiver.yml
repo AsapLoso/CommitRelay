@@ -21,6 +21,8 @@ concurrency:
 
 jobs:
   dispatch:
+    # Reject accidental deployment in a public repo: checkpoint metadata belongs in private storage.
+    if: ${{ github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

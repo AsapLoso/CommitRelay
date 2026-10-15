@@ -1,0 +1,14 @@
+# Requires COMMITRELAY_GITHUB_TOKEN for private GitHub repositories.
+name: weekly-articles
+enabled: false
+source:
+  type: github
+  repository: owner/private-repository
+  branch: main
+  folder: articles
+  pattern: "*.md"
+parser:
+  script: commitrelay/parsers/after_separator.py
+  options: {}
+destinations:
+  telegram: true

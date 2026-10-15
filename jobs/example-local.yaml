@@ -1,0 +1,6 @@
+# Local post-commit Git hook. Install explicitly using CLI.
+name: local-commit
+enabled: false
+configs: [local-notes]
+trigger:
+  type: local_post_commit

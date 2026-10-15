@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "commitrelay"
+version = "0.1.0"
+description = "Git-native, agent-friendly file-to-message dispatcher"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0"]
+
+[project.scripts]
+commitrelay = "commitrelay.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["commitrelay*"]

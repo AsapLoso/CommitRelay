@@ -1,0 +1,12 @@
+# Copy into configs/ and customize. Disabled until explicitly enabled.
+name: local-notes
+enabled: false
+source:
+  type: local_git
+  root: /absolute/path/to/your/git/repository
+  branch: HEAD
+  folder: reports
+  pattern: "*.md"
+parser: null
+destinations:
+  telegram: true

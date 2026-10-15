@@ -1,0 +1,8 @@
+# GitHub Actions cron lives in the workflow YAML, not here.
+# Durable hosted checkpoints are not yet implemented.
+name: hosted-poll
+enabled: false
+configs: [weekly-articles]
+trigger:
+  type: scheduled_poll
+  cron_utc: "17 18 * * *"

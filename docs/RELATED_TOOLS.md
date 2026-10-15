@@ -23,6 +23,12 @@ _Reviewed 15 October 2026. This is not an exhaustive market survey, and linked p
 
 **These are alternatives, not claimed drop-in equivalents.** Some are libraries, some GitHub Actions, and some hosted automation products. Requirements such as private-repository access, attachment size, privacy filters, rate limits, storage and hosting can change the trade-offs.
 
+## What we reuse today
+
+CommitRelay now depends on **[Apprise](https://github.com/caronc/apprise)** for Telegram message delivery and Markdown-file attachments. We do not vendor Apprise source code or claim its notification integrations as our own. This is the first concrete step toward a composition-first architecture. Existing Git/GitHub services perform the source/versioning work; PyYAML handles configuration, and SQLite stores local state.
+
+Other Apprise destinations are **not yet wired into CommitRelay's configuration or CLI**. Remote external triggering and durable hosted checkpoints are still outstanding.
+
 ## When CommitRelay may be worth trying
 
 The particular combination we are developing is:

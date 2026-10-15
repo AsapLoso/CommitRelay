@@ -26,7 +26,7 @@ Local post-commit hooks don't see commits on other people's clones. Remote GitHu
 2. Trusted parser returns a string or None. Error => fail closed; no raw-content fallback.
 3. SHA-256 hash of parsed content is compared to checkpoint for (config, source, path, destination).
 4. Same hash/None/disabled destination => no send.
-5. New hash => send via Telegram (document upload if >4096 characters).
+5. New hash => deliver via **Apprise's Telegram integration** (Markdown attachment if >4096 characters).
 6. After Telegram acknowledges success, persist digest to SQLite.
 
 Local checkpoint database is ignored by Git. These checkpoints are **not durable on hosted ephemeral Actions runners**. A GitHub-backed / durable backend with concurrency control is required before unattended hosted scheduling can be enabled. Telegram response and checkpoint save aren't one atomic transaction; an interruption between the two can cause a duplicate on retry.
@@ -37,7 +37,7 @@ Local checkpoint database is ignored by Git. These checkpoints are **not durable
 
 - Implemented: add [name], list, edit [name], enable/disable [name], doctor [-n | -y --telegram/--all], run --all/--config/--job [--dry-run], hook install.
 - Local parser and transport tests: initial prototype passed seven offline checks; GitHub repository now has a separate regression test suite and an opt-in manual CI workflow. Do not state it passed hosted CI until a real run confirms that.
-- No Discord, WhatsApp, email, generic webhook or arbitrary code execution from watched repositories. Only declared trusted local Python parsers.
+- Apprise is installed as the Telegram transport dependency. Other Apprise services (Discord, email, etc.) are **not exposed** as CommitRelay destinations yet. No webhook listener or arbitrary code execution from watched repositories; only explicitly configured trusted local Python parsers.
 
 ## Future vertical slices (ordered)
 
@@ -45,7 +45,7 @@ Local checkpoint database is ignored by Git. These checkpoints are **not durable
 2. Implement durable state (prefer private checkpoint repository/file or other transaction-safe store) and a single hosted job runner with locking.
 3. Add cross-repo GitHub watcher triggers and/or scheduled polling, preserving state and avoiding duplicates.
 4. Add configurable retry/backoff, GitHub API pagination, and explicit per-commit replay if users require it.
-5. Add destination adapters only once implemented (Discord, etc.); keep registered adapters discoverable by doctor.
+5. Where useful, expose additional Apprise-supported destinations through safe explicit configuration; avoid reimplementing their protocols. Keep available destinations discoverable by doctor.
 6. Release tagged v1 with installation/upgrade documentation and a consciously chosen open-source license.
 
 ## Operational constraints

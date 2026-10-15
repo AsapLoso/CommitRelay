@@ -6,6 +6,8 @@ CommitRelay converts files from Git repositories into messages **without AI-spec
 
 The file is the interface; Git is the audit trail. This makes CommitRelay particularly useful in agentic workflows, without coupling it to one LLM or vendor.
 
+**Built by connecting good tools, not reinventing them.** CommitRelay is a small integration project: Git already tracks files, GitHub already produces push events, and [Apprise](https://github.com/caronc/apprise) already delivers notifications. Our code connects these pieces with sync YAML, trusted content parsers, transformed-output deduplication, and a local CLI. This is useful as a learning and portfolio project *and* as a practical solution to a specific problem. See [Why this project exists](docs/PROJECT_STORY.md).
+
 That mysteriously quiet co-author who slips a *"tiny cleanup"* commit under the rug? CommitRelay can notice that too. It won't judge the commit — just what changed.
 
 ## Example 1: your weekly article, straight to your phone
@@ -30,7 +32,7 @@ The intended setup would watch particular branches, directories and filenames an
 
 For the event-driven design and existing alternatives, see [Push hooks and external triggers](docs/EVENT_TRIGGERS.md).
 
-> **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Telegram delivery and local SQLite checkpoints have been implemented. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
+> **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Apprise-backed Telegram delivery and local SQLite checkpoints are present. Offline adapter tests were added, but live Telegram delivery and hosted end-to-end behavior have not been verified. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
 
 ## Before installing: consider these alternatives
 
@@ -48,6 +50,18 @@ CommitRelay is not necessarily the best choice. If you need something that alrea
 **Where CommitRelay aims to fit:** file-content delivery with trusted transforms, content-level deduplication, a Git-friendly CLI, and configurable sources. This is still early software; its hosted cross-repository workflow is **not ready yet**. We would rather link you to a more suitable tool than have you depend on an unfinished feature.
 
 For a more detailed comparison and other tools, see [Related tools and honest alternatives](docs/RELATED_TOOLS.md). The proposed event-driven approach is described in [Push hooks and external triggers](docs/EVENT_TRIGGERS.md).
+
+## Built with and credited to
+
+| Existing project | Its role | Why we reuse it |
+| --- | --- | --- |
+| [Git](https://git-scm.com/) | Versioned source of truth and local hooks | CommitRelay does not implement version control. |
+| [GitHub](https://github.com/) and [GitHub Actions](https://docs.github.com/en/actions) | Repository hosting, API, hosted events and optional runners | CommitRelay does not implement its own Git host. |
+| [Apprise](https://github.com/caronc/apprise) | **Telegram transport** and notification/attachment handling | We replaced custom Telegram HTTP transport with this maintained Python dependency. Other Apprise services are *not yet exposed* as CommitRelay destinations. |
+| [PyYAML](https://pyyaml.org/) | Configuration reading and writing | Sync and job YAML files are parsed by an existing library. |
+| [SQLite](https://www.sqlite.org/) | Local delivery checkpoints | Uses Python's bundled sqlite3 support, not a custom database server. |
+
+**CommitRelay's own contribution:** a narrow Git-to-file-content pipeline, parser contract with fail-closed behavior, SHA-256 comparison of *transformed* content, configuration examples, and a small CLI. We don't claim to have invented notifications, webhooks, or content hashing.
 
 ## Why use it?
 
@@ -97,7 +111,7 @@ commitrelay doctor -n
 commitrelay doctor -y --telegram
 ~~~
 
-The first doctor call diagnoses without sending. The second sends exactly one harmless test message, never a private report.
+The first doctor call diagnoses without sending. The second **attempts** one harmless test message through Apprise, never a private report. A real delivery has not yet been verified for this project.
 
 **GitHub Actions: CLI setup** from the repository where an Action would run:
 

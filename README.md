@@ -8,6 +8,24 @@ The file is the interface; Git is the audit trail. This makes CommitRelay partic
 
 That mysteriously quiet co-author who slips a *"tiny cleanup"* commit under the rug? CommitRelay can notice that too. It won't judge the commit — just what changed.
 
+## Example project: a personal research messenger
+
+*An illustrative use case — not a claim that automatic external triggering works yet.*
+
+Imagine keeping all your work in **one private GitHub repository**, with several independent agents contributing files:
+
+1. **Every evening**, an agent writes tomorrow's Orthodox calendar readings into a dated Markdown report.
+2. **Every Saturday**, another agent writes a longer research article. The file contains personal annotations above a `---` divider and the shareable article below.
+3. **Whenever either agent commits an update**, you want the relevant content delivered to your Telegram chat — without copying text, giving the agents Telegram credentials, or exposing private annotations.
+4. **If only the private annotations change**, no new message should be sent. If the actual article or reading guide changes, deliver the updated content.
+5. **If an event is missed**, a scheduled check could catch up using saved delivery history.
+
+The agents only need Git. A CommitRelay installation would use **two sync configurations, two content-selection policies, and one Telegram destination**. It would check the parsed content rather than assuming every changed commit deserves a message.
+
+This illustrates the intended end-to-end experience: *agent writes file → Git tracks it → CommitRelay selects and transforms it → Telegram receives the useful part*. It is also applicable to coding-agent status reports, experiment results, build artifacts and other machine-generated files.
+
+**What works today:** reading committed files from a local or external GitHub repository when the CLI runs, filtering with trusted Python parsers, comparing transformed-content hashes in local SQLite, and sending through the Telegram adapter. **What does not work yet:** automatically reacting to external GitHub pushes from a central installation, maintaining durable checkpoints across GitHub-hosted runners, and automatically scheduling catch-up jobs. See [Architecture and roadmap](docs/ARCHITECTURE.md).
+
 > **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Telegram delivery and local SQLite checkpoints have been implemented. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
 
 ## Before installing: consider these alternatives

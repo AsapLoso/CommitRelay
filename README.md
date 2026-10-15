@@ -8,23 +8,27 @@ The file is the interface; Git is the audit trail. This makes CommitRelay partic
 
 That mysteriously quiet co-author who slips a *"tiny cleanup"* commit under the rug? CommitRelay can notice that too. It won't judge the commit — just what changed.
 
-## Example project: a personal research messenger
+## Example 1: your weekly article, straight to your phone
 
-*An illustrative use case — not a claim that automatic external triggering works yet.*
+*An illustrative end-to-end project. The central automatic GitHub push trigger is **not yet implemented**.*
 
-Imagine keeping all your work in **one private GitHub repository**, with several independent agents contributing files:
+You have an AI agent that researches a different topic each Saturday. It writes a long Markdown article in your private repository, perhaps with personal notes above a divider:
 
-1. **Every evening**, an agent writes tomorrow's Orthodox calendar readings into a dated Markdown report.
-2. **Every Saturday**, another agent writes a longer research article. The file contains personal annotations above a `---` divider and the shareable article below.
-3. **Whenever either agent commits an update**, you want the relevant content delivered to your Telegram chat — without copying text, giving the agents Telegram credentials, or exposing private annotations.
-4. **If only the private annotations change**, no new message should be sent. If the actual article or reading guide changes, deliver the updated content.
-5. **If an event is missed**, a scheduled check could catch up using saved delivery history.
+**The workflow you want:** the agent commits the article → CommitRelay notices the change → a trusted parser keeps only the shareable article, not the notes → the article arrives in Telegram. If you later edit only the private notes, your phone stays quiet because the **parsed article** hasn't changed.
 
-The agents only need Git. A CommitRelay installation would use **two sync configurations, two content-selection policies, and one Telegram destination**. It would check the parsed content rather than assuming every changed commit deserves a message.
+Your agent never gets a Telegram token, doesn't need special AI hooks, and doesn't have to know that Telegram exists. It just writes a file and commits it. The same pattern works for research reports, meeting notes, generated documents, or experiment results.
 
-This illustrates the intended end-to-end experience: *agent writes file → Git tracks it → CommitRelay selects and transforms it → Telegram receives the useful part*. It is also applicable to coding-agent status reports, experiment results, build artifacts and other machine-generated files.
+**Today:** the CLI can read that repository on demand, transform the content, compare its hash with a local checkpoint, and send through Telegram. **Missing:** unattended external-push triggering and durable hosted checkpoints.
 
-**What works today:** reading committed files from a local or external GitHub repository when the CLI runs, filtering with trusted Python parsers, comparing transformed-content hashes in local SQLite, and sending through the Telegram adapter. **What does not work yet:** automatically reacting to external GitHub pushes from a central installation, maintaining durable checkpoints across GitHub-hosted runners, and automatically scheduling catch-up jobs. See [Architecture and roadmap](docs/ARCHITECTURE.md).
+## Example 2: the mysterious co-author
+
+Your colleague keeps slipping *"just a tiny cleanup"* into the codebase, somehow always in the folder you're working on. You'd like a friendly heads-up showing **which files they pushed and the exact changes**, so you don't unknowingly build on top of unexpected modifications.
+
+The intended setup would watch particular branches, directories and filenames and deliver a filtered, readable diff when someone pushes. You might mute notifications overnight and receive a digest in the morning instead of running an Actions job every five minutes.
+
+**This is a proposed feature, not current functionality.** CommitRelay presently reads the latest file contents, **not historical per-commit diffs**, and has no automatic remote webhook receiver or quiet-hours queue. Notifications cannot prevent surprise commits or guarantee you'll see them before you resume work.
+
+For the event-driven design and existing alternatives, see [Push hooks and external triggers](docs/EVENT_TRIGGERS.md).
 
 > **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Telegram delivery and local SQLite checkpoints have been implemented. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
 
@@ -43,7 +47,7 @@ CommitRelay is not necessarily the best choice. If you need something that alrea
 
 **Where CommitRelay aims to fit:** file-content delivery with trusted transforms, content-level deduplication, a Git-friendly CLI, and configurable sources. This is still early software; its hosted cross-repository workflow is **not ready yet**. We would rather link you to a more suitable tool than have you depend on an unfinished feature.
 
-For a more detailed comparison and other tools, see [Related tools and honest alternatives](docs/RELATED_TOOLS.md).
+For a more detailed comparison and other tools, see [Related tools and honest alternatives](docs/RELATED_TOOLS.md). The proposed event-driven approach is described in [Push hooks and external triggers](docs/EVENT_TRIGGERS.md).
 
 ## Why use it?
 

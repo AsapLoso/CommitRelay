@@ -213,6 +213,6 @@ No automatic Telegram workflow has been activated in this repository.
 - Security: review changes to any workflow that has secrets. Public source code doesn't imply your tokens, private files, or personal configurations should become public.
 - Development tests: `python -m unittest discover -s tests -v`.
 
-Please use [GitHub feature requests](../../issues/new?template=feature_request.md) rather than empty pull requests. Include your use case, proposed CLI/config syntax and privacy considerations.
+Please use [GitHub feature requests](https://github.com/AsapLoso/CommitRelay/issues/new?template=feature_request.md) rather than empty pull requests. Include your use case, proposed CLI/config syntax and privacy considerations.
 
 **Release plan:** first verify the end-to-end Telegram slice and checkpoint behavior; then add persisted hosted state and external trigger automation. No release is claimed until those are working.

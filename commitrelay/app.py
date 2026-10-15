@@ -1,4 +1,4 @@
-"""Local/GitHub source readers, safe parsers, Telegram delivery, and checkpoints."""
+"""Local/GitHub readers, trusted parsers, Apprise delivery, and checkpoints."""
 from __future__ import annotations
 import base64
 from dataclasses import dataclass
@@ -14,7 +14,6 @@ import subprocess
 import urllib.error
 import urllib.parse
 import urllib.request
-import uuid
 import yaml
 
 
@@ -196,26 +195,54 @@ class Checkpoints:
 
 
 def telegram_send(title, path, body, test=False):
+    """Send with Apprise rather than maintaining our own Telegram HTTP client.
+
+    Never log or put credentials in tracked configuration. Long reports are
+    delivered as a Markdown attachment rather than silently truncated.
+    """
     token, chat = os.getenv(token_env()), os.getenv(chat_env())
     if not token or not chat:
         raise ConfigError(credential_status())
-    message = "CommitRelay test message" if test else title + "\n" + PurePosixPath(path).name + "\n\n" + body
-    url = "https://api.telegram.org/bot" + token + "/"
-    if len(message) <= 4096:
-        data = urllib.parse.urlencode({"chat_id": chat, "text": message, "disable_web_page_preview": "true"}).encode()
-        req = urllib.request.Request(url + "sendMessage", data=data)
-    else:
-        boundary = "upload" + uuid.uuid4().hex
-        def fld(name, value):
-            return (f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n').encode()
-        filename = PurePosixPath(path).name
-        data = fld("chat_id", chat) + fld("caption", title[:1024])
-        data += (f'--{boundary}\r\nContent-Disposition: form-data; name="document"; filename="{filename}"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n').encode()
-        data += body.encode("utf-8") + b"\r\n" + f"--{boundary}--\r\n".encode()
-        req = urllib.request.Request(url + "sendDocument", data=data, headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        if not json.load(resp).get("ok"):
-            raise ConfigError("Telegram delivery not confirmed")
+    try:
+        from apprise import Apprise, NotifyFormat
+        from apprise.attachment import AttachMemory
+
+        notifier = Apprise()
+        # Construct the URL only in memory; never display it in diagnostics.
+        if not notifier.add(f"tgram://{token}/{chat}/"):
+            raise ConfigError("Cannot configure Telegram destination through Apprise")
+        if test:
+            success = notifier.notify(
+                body="CommitRelay test message", body_format=NotifyFormat.TEXT
+            )
+        else:
+            filename = PurePosixPath(path).name
+            message = title + "\n" + filename + "\n\n" + body
+            if len(message) <= 4096:
+                success = notifier.notify(
+                    body=message, body_format=NotifyFormat.TEXT
+                )
+            else:
+                attachment = AttachMemory(
+                    content=body.encode("utf-8"),
+                    name=filename,
+                    mimetype="text/markdown",
+                )
+                success = notifier.notify(
+                    body=title + "\n" + filename + "\nSee attached Markdown report.",
+                    attach=attachment,
+                    body_format=NotifyFormat.TEXT,
+                )
+        if not success:
+            raise ConfigError("Telegram delivery through Apprise was not confirmed")
+    except ImportError as exc:
+        raise ConfigError("Apprise is not installed: pip install -e .") from None
+    except ConfigError:
+        raise
+    except Exception:
+        # Library errors can contain service URLs with credentials.
+        # Do not surface their raw messages or exception chaining.
+        raise ConfigError("Telegram delivery through Apprise failed (details redacted)") from None
 
 
 def run_sync(sync: Sync, checkpoints: Checkpoints, dry_run=False):

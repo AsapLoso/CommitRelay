@@ -6,7 +6,9 @@ import shlex
 import subprocess
 import sys
 import yaml
-from .app import Checkpoints, ConfigError, credential_status, discover, load_sync, run_sync, telegram_send
+from .app import ConfigError, credential_status, discover, load_sync, run_sync, telegram_send
+from .events import event_route, matching_syncs
+from .hosted_state import StateError, checkpoints_from_environment
 
 
 def valid_configurations(folder):
@@ -219,6 +221,7 @@ def main(argv=None):
     select.add_argument("--config", help="Sync name or config YAML path")
     select.add_argument("--job", type=Path, help="Job YAML")
     r.add_argument("--dry-run", action="store_true", help="Preview: no network sends or checkpoint writes")
+    r.add_argument("--event-file", type=Path, help="GitHub repository_dispatch event JSON; selects only explicitly configured source repositories")
     h = sp.add_parser("hook", help="Manage local Git hooks")
     h.add_argument("action", choices=["install"])
     h.add_argument("--repo", default=".")
@@ -246,7 +249,15 @@ def main(argv=None):
                 syncs = [load_sync(args.configs / (name + ".yaml")) for name in job["configs"]]
             else:
                 syncs = selected(args.configs, args.config, args.all)
-            checkpoints = Checkpoints(args.state)
+            if args.event_file:
+                if not args.all:
+                    raise ConfigError("--event-file requires --all")
+                event_repo, event_ref = event_route(args.event_file)
+                syncs = matching_syncs(syncs, event_repo, event_ref)
+                if not syncs:
+                    print("No configured sync matches this external push event; nothing sent")
+                    return 0
+            checkpoints = checkpoints_from_environment(args.state)
             try:
                 for sync in syncs:
                     sent, skipped = run_sync(sync, checkpoints, args.dry_run)
@@ -254,6 +265,6 @@ def main(argv=None):
             finally:
                 checkpoints.close()
         return 0
-    except (ConfigError, OSError, subprocess.CalledProcessError) as exc:
+    except (ConfigError, StateError, OSError, subprocess.CalledProcessError) as exc:
         print("ERROR:", exc, file=sys.stderr)
         return 1

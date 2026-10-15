@@ -38,6 +38,16 @@ def project_root(config: Path) -> Path:
     return config.resolve().parent.parent
 
 
+def resolve_parser(config_path: Path, script: str) -> Path:
+    """Resolve trusted local scripts, including packaged example parsers."""
+    project = (project_root(config_path) / script).resolve()
+    if project.is_file():
+        return project
+    if script.startswith("commitrelay/parsers/") and ".." not in Path(script).parts:
+        return (Path(__file__).resolve().parent.parent / script).resolve()
+    return project
+
+
 def load_sync(path: Path) -> Sync:
     try:
         obj = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -74,7 +84,7 @@ def load_sync(path: Path) -> Sync:
             raise ConfigError("parser must be null or {script: path}")
         if parser.get("options") is not None and not isinstance(parser["options"], dict):
             raise ConfigError("parser.options must be a mapping")
-        if not (project_root(path) / parser["script"]).resolve().is_file():
+        if not resolve_parser(path, parser["script"]).is_file():
             raise ConfigError("parser script not found: " + parser["script"])
     return Sync(path, name, obj["enabled"], src, parser, dest)
 
@@ -105,7 +115,7 @@ def credential_status():
 def parsed_content(sync: Sync, raw: str):
     if sync.parser is None:
         return raw.strip() or None
-    path = (project_root(sync.file) / sync.parser["script"]).resolve()
+    path = resolve_parser(sync.file, sync.parser["script"])
     spec = importlib.util.spec_from_file_location("commitrelay_parser_" + sha256(str(path).encode()).hexdigest()[:12], path)
     if not spec or not spec.loader:
         raise ConfigError("cannot load parser")

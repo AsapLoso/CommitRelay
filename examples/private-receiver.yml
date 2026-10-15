@@ -1,0 +1,43 @@
+# Copy ONLY to .github/workflows/commitrelay.yml in your PRIVATE installation repo.
+# No scheduled polling and no runner on ordinary pushes to this repo.
+name: CommitRelay delivery (opt-in)
+on:
+  repository_dispatch:
+    types: [commitrelay_push]
+  workflow_dispatch:
+
+permissions:
+  contents: write # Only on your PRIVATE installation repo; for hosted checkpoints.
+
+concurrency:
+  group: commitrelay-delivery
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CommitRelay library
+        run: python -m pip install 'git+https://github.com/AsapLoso/CommitRelay.git@main'
+        # Pin to a reviewed commit SHA for production deployments.
+      - name: Route eligible push and dispatch
+        env:
+          COMMITRELAY_GITHUB_TOKEN: ${{ secrets.COMMITRELAY_SOURCE_TOKEN }}
+          COMMITRELAY_STATE_REPOSITORY: ${{ github.repository }}
+          COMMITRELAY_STATE_TOKEN: ${{ github.token }}
+          COMMITRELAY_STATE_BRANCH: main
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        shell: bash
+        run: |
+          # Manual invocation is deliberately read-only. External events may deliver
+          # only from configured, enabled source repositories.
+          if [[ "$GITHUB_EVENT_NAME" == 'repository_dispatch' ]]; then
+            commitrelay run --all --event-file "$GITHUB_EVENT_PATH"
+          else
+            commitrelay run --all --dry-run
+          fi

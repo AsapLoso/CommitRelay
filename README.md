@@ -10,6 +10,23 @@ That mysteriously quiet co-author who slips a *"tiny cleanup"* commit under the 
 
 > **Status: v0.1 development, not a release.** CLI, local Git and GitHub snapshot readers, pluggable Python parsers, Telegram delivery and local SQLite checkpoints have been implemented. **Automated hosted dispatch is OFF** while durable state and full end-to-end testing are unfinished.
 
+## Before installing: consider these alternatives
+
+CommitRelay is not necessarily the best choice. If you need something that already works end to end, these established tools may be a better fit **today**:
+
+| Your goal | Consider instead | Why |
+| --- | --- | --- |
+| Send a Telegram message from an existing GitHub workflow | [appleboy/telegram-action](https://github.com/appleboy/telegram-action) | A purpose-built GitHub Action; no new dispatcher needed. |
+| Send notifications to Telegram, Discord, email, and many others from Python | [Apprise](https://github.com/caronc/apprise) | Mature multi-service Python library and CLI; better if delivery integrations are the main requirement. |
+| Send notifications from Go or GitHub Actions | [Shoutrrr](https://github.com/containrrr/shoutrrr) | Existing Go notification library and [GitHub Action](https://github.com/containrrr/shoutrrr-action). |
+| Send simple phone/desktop push notifications without maintaining a Telegram bot | [ntfy](https://github.com/binwiederhier/ntfy) | A small HTTP POST or CLI command may be all you need. |
+| Build a complete automation visually, with GitHub and Telegram connections | [n8n](https://n8n.io/) | Existing workflow editor and integrations; more suitable if you want a visual automation platform. |
+| Trigger only when particular files change in GitHub Actions | [dorny/paths-filter](https://github.com/dorny/paths-filter) or [tj-actions/changed-files](https://github.com/tj-actions/changed-files) | They solve path filtering and change detection without another watcher. |
+
+**Where CommitRelay aims to fit:** file-content delivery with trusted transforms, content-level deduplication, a Git-friendly CLI, and configurable sources. This is still early software; its hosted cross-repository workflow is **not ready yet**. We would rather link you to a more suitable tool than have you depend on an unfinished feature.
+
+For a more detailed comparison and other tools, see [Related tools and honest alternatives](docs/RELATED_TOOLS.md).
+
 ## Why use it?
 
 - **Agent-agnostic:** any agent or program that commits a file can produce content.
